@@ -1,0 +1,30 @@
+# =======================================================
+# render.yaml — Blueprint de Deploy Automatizado no Render
+# Documentação: https://render.com/docs/render-yaml-spec
+# =======================================================
+
+services:
+  - type: web
+    name: vagamonitor
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Variáveis do Telegram (preencha no painel do Render ou via blueprint)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Conexão automática com o banco de dados provisionado
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vagamonitor-db
+          property: connectionString
+
+databases:
+  - name: vagamonitor-db
+    databaseName: vagamonitor
+    plan: free

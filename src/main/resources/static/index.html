@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VagaMonitor - Busque vagas de emprego sob demanda em tempo real no Portal Gupy e envie diretamente para o Telegram.">
+    <title>VagaMonitor — Busca de Vagas em Tempo Real</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Site Header (Name That UI: Header vs Navigation Bar) -->
+    <header class="header">
+        <div class="container header-inner">
+            <a href="/" class="logo" aria-label="Página Inicial do VagaMonitor">
+                <div class="logo-badge">
+                    <!-- SVG Search Radar -->
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <path d="M11 8a3 3 0 0 0-3 3"></path>
+                    </svg>
+                </div>
+                <span class="logo-text">VagaMonitor</span>
+            </a>
+
+            <div class="header-actions">
+                <!-- Status Dot (Presence Indicator) -->
+                <div class="source-status" title="Conexão com a base de dados pública do Portal Gupy">
+                    <span class="status-dot"></span>
+                    <span>Portal Gupy Online</span>
+                </div>
+
+                <!-- Botão de Configuração do Telegram -->
+                <button type="button" id="btn-open-config" class="btn-config" title="Configurações de Envio ao Telegram" aria-label="Configurações do Telegram">
+                    <!-- SVG Oficial Telegram -->
+                    <svg class="svg-icon svg-icon-tg" viewBox="0 0 24 24" style="color: #229ED9;">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                    </svg>
+                    <span>Telegram</span>
+                    <span id="config-badge-dot" class="config-badge-dot hidden" title="Telegram configurado"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-pill">
+                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span>Busca em tempo real sob demanda</span>
+            </div>
+            <h1 class="hero-title">
+                Encontre vagas reais e envie ao <span class="gradient-text">Telegram</span>
+            </h1>
+            <p class="hero-subtitle">
+                Consulte oportunidades abertas nas maiores empresas do Brasil diretamente pelo Portal Gupy com filtros inteligentes por modelo e localização.
+            </p>
+        </div>
+    </section>
+
+    <!-- Search Section (Name That UI: Search Field & Filter Chips) -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-card" id="search-card">
+                <form id="search-form" novalidate>
+                    <div class="search-grid">
+                        <!-- Input Palavra-chave -->
+                        <div class="input-wrapper">
+                            <svg class="svg-icon input-icon" viewBox="0 0 24 24">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input
+                                type="text"
+                                id="keyword"
+                                name="keyword"
+                                class="field-input"
+                                placeholder="Cargo, tecnologia ou palavra-chave (ex: Java, Estágio, Python)..."
+                                autocomplete="off"
+                                required
+                            >
+                            <button type="button" id="btn-clear-keyword" class="input-clear" aria-label="Limpar campo">
+                                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+
+                        <!-- Input Localização -->
+                        <div class="input-wrapper">
+                            <svg class="svg-icon input-icon" viewBox="0 0 24 24">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <input
+                                type="text"
+                                id="location"
+                                name="location"
+                                class="field-input"
+                                placeholder="Estado ou cidade (ex: São Paulo, RJ)..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <!-- Botão de Ação Primária -->
+                        <div class="btn-search-group">
+                            <button type="submit" id="btn-buscar" class="btn-primary">
+                                <svg class="svg-icon" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <span>Buscar Vagas</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Chips (Name That UI: Filter Chips / Pill vs. Tag) -->
+                    <div class="filter-row">
+                        <span class="filter-label">
+                            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            Modelo:
+                        </span>
+                        <div class="filter-chips-group" id="group-modelo">
+                            <button type="button" class="chip active" data-model="">Todos</button>
+                            <button type="button" class="chip" data-model="remote">
+                                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                Remoto
+                            </button>
+                            <button type="button" class="chip" data-model="hybrid">
+                                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><path d="M18 2h-3a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"></path><path d="M9 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"></path></svg>
+                                Híbrido
+                            </button>
+                            <button type="button" class="chip" data-model="on-site">
+                                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                Presencial
+                            </button>
+                        </div>
+
+                        <span class="filter-label" style="margin-left: 8px;">
+                            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                            Contratação:
+                        </span>
+                        <div class="filter-chips-group" id="group-tipo">
+                            <button type="button" class="chip active" data-type="">Todos</button>
+                            <button type="button" class="chip" data-type="vacancy_type_effective">Efetivo</button>
+                            <button type="button" class="chip" data-type="vacancy_type_internship">Estágio</button>
+                            <button type="button" class="chip" data-type="vacancy_type_apprentice">Jovem Aprendiz</button>
+                            <button type="button" class="chip" data-type="vacancy_type_temporary">Temporário</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Zero State (Name That UI: Empty State inicial) -->
+            <section id="state-idle" class="empty-state">
+                <div class="empty-icon-box">
+                    <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                </div>
+                <h2 class="empty-title">Pronto para buscar oportunidades</h2>
+                <p class="empty-desc">
+                    Selecione um termo frequente abaixo ou digite no campo de busca para listar vagas ativas no Portal Gupy:
+                </p>
+                <div class="quick-tags-container">
+                    <button type="button" class="quick-tag" data-tag="desenvolvedor">
+                        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        Desenvolvedor
+                    </button>
+                    <button type="button" class="quick-tag" data-tag="java">
+                        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+                        Java
+                    </button>
+                    <button type="button" class="quick-tag" data-tag="estagio">
+                        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                        Estágio
+                    </button>
+                    <button type="button" class="quick-tag" data-tag="python">Python</button>
+                    <button type="button" class="quick-tag" data-tag="react">React / Frontend</button>
+                    <button type="button" class="quick-tag" data-tag="analista de dados">Dados</button>
+                </div>
+            </section>
+
+            <!-- Skeleton Loader (Name That UI: Skeleton vs. Spinner) -->
+            <div id="state-skeleton" class="vagas-grid hidden" aria-busy="true" aria-label="Carregando vagas...">
+                <div class="skeleton-card">
+                    <div class="card-top">
+                        <div class="skeleton-avatar skeleton-shimmer"></div>
+                        <div class="card-title-group" style="width: 100%;">
+                            <div class="skeleton-title skeleton-shimmer"></div>
+                            <div class="skeleton-subtitle skeleton-shimmer"></div>
+                        </div>
+                    </div>
+                    <div class="vaga-meta-row">
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                    </div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-btn skeleton-shimmer"></div>
+                        <div class="skeleton-btn-tg skeleton-shimmer"></div>
+                    </div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="card-top">
+                        <div class="skeleton-avatar skeleton-shimmer"></div>
+                        <div class="card-title-group" style="width: 100%;">
+                            <div class="skeleton-title skeleton-shimmer"></div>
+                            <div class="skeleton-subtitle skeleton-shimmer"></div>
+                        </div>
+                    </div>
+                    <div class="vaga-meta-row">
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                    </div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-btn skeleton-shimmer"></div>
+                        <div class="skeleton-btn-tg skeleton-shimmer"></div>
+                    </div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="card-top">
+                        <div class="skeleton-avatar skeleton-shimmer"></div>
+                        <div class="card-title-group" style="width: 100%;">
+                            <div class="skeleton-title skeleton-shimmer"></div>
+                            <div class="skeleton-subtitle skeleton-shimmer"></div>
+                        </div>
+                    </div>
+                    <div class="vaga-meta-row">
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                        <div class="skeleton-pill skeleton-shimmer"></div>
+                    </div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-btn skeleton-shimmer"></div>
+                        <div class="skeleton-btn-tg skeleton-shimmer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State / Sem Resultados -->
+            <section id="state-empty" class="empty-state hidden">
+                <div class="empty-icon-box" style="border-color: rgba(245, 158, 11, 0.4); color: var(--warning);">
+                    <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                </div>
+                <h2 class="empty-title">Nenhuma vaga encontrada</h2>
+                <p class="empty-desc">
+                    Não encontramos resultados com esses filtros. Tente palavras-chave mais abrangentes ou selecione outros modelos de trabalho.
+                </p>
+                <button type="button" id="btn-reset-filters" class="btn-secondary">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    Limpar Filtros e Tentar Novamente
+                </button>
+            </section>
+
+            <!-- Error State -->
+            <section id="state-error" class="empty-state hidden">
+                <div class="empty-icon-box" style="border-color: rgba(239, 68, 68, 0.4); color: var(--danger);">
+                    <svg class="svg-icon svg-icon-lg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <h2 class="empty-title">Falha na consulta</h2>
+                <p class="empty-desc" id="error-msg">Não foi possível conectar à fonte de vagas da Gupy.</p>
+                <button type="button" id="btn-retry" class="btn-primary">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    Tentar Novamente
+                </button>
+            </section>
+
+            <!-- Results Section (Name That UI: Card Grid) -->
+            <div id="results-section" class="hidden">
+                <div class="results-header">
+                    <h2 class="results-title" id="results-count">Oportunidades encontradas</h2>
+                    <span class="results-badge">
+                        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Portal Gupy • Vagas em tempo real
+                    </span>
+                </div>
+                <div id="vagas-grid" class="vagas-grid"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Dialog de Detalhes da Vaga (Name That UI: Modal Dialog vs Drawer vs Sheet) -->
+    <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modal-title" class="modal-vaga-title">Título da Vaga</h3>
+                    <div id="modal-company-info" class="company-name" style="font-size: 0.95rem;">Empresa</div>
+                </div>
+                <button type="button" class="modal-close" id="btn-modal-close" aria-label="Fechar janela de detalhes">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-meta-chips" id="modal-meta-container">
+                    <!-- Gerado dinamicamente com pills e SVGs -->
+                </div>
+                <div id="modal-descricao" class="modal-descricao">
+                    Carregando detalhes da oportunidade...
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <a id="modal-link-original" class="btn-secondary" target="_blank" rel="noopener noreferrer">
+                    <span>Ver no Portal Gupy</span>
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <button type="button" id="btn-enviar-telegram" class="btn-telegram-primary">
+                    <svg class="svg-icon svg-icon-tg" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                    </svg>
+                    <span>Enviar para o Telegram</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuração do Telegram -->
+    <div id="modal-config" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-config-title">
+        <div class="modal-card config-card">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modal-config-title" class="modal-vaga-title" style="display: flex; align-items: center; gap: 8px;">
+                        <svg class="svg-icon svg-icon-tg" viewBox="0 0 24 24" style="color: #229ED9;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                        </svg>
+                        Configuração do Telegram
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Defina suas próprias credenciais para receber alertas no seu chat/canal</p>
+                </div>
+                <button type="button" class="modal-close" id="btn-modal-config-close" aria-label="Fechar configurações">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form id="form-telegram-config">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="tg-bot-token" class="form-label">Bot Token (do @BotFather)</label>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="tg-bot-token"
+                                class="field-input"
+                                style="padding-right: 42px;"
+                                placeholder="123456789:ABCdefGhIJKlmNoPQRstuVWXyz"
+                                autocomplete="off"
+                            >
+                            <button type="button" id="btn-toggle-token" class="password-toggle" aria-label="Mostrar ou ocultar token">
+                                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                        <p class="form-help">Criado enviando <code>/newbot</code> para o BotFather no Telegram.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tg-chat-id" class="form-label">Chat ID ou ID do Grupo</label>
+                        <div class="input-wrapper">
+                            <input
+                                type="text"
+                                id="tg-chat-id"
+                                class="field-input"
+                                placeholder="ex: 123456789 ou -100123456789"
+                                autocomplete="off"
+                            >
+                        </div>
+                        <p class="form-help">Obtido enviando uma mensagem para o bot e consultando seu chat ID.</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="btn-clear-tg-config" class="btn-secondary">
+                        Limpar
+                    </button>
+                    <button type="submit" class="btn-primary" style="background: var(--telegram);">
+                        Salvar Configurações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Name That UI: Toast / Snackbar) -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                VagaMonitor • Projeto Acadêmico ADS Mackenzie •
+                Fonte de dados: <a href="https://portal.gupy.io" target="_blank" rel="noopener">Portal Gupy</a>
+                (API pública de busca de vagas em tempo real)
+            </p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
