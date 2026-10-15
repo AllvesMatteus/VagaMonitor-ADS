@@ -58,8 +58,8 @@ public class TelegramService {
      * com fallback para as variáveis de ambiente do servidor.
      */
     public RespostaDTO enviarVaga(String titulo, String empresa, String urlOriginal, String customToken, String customChatId) {
-        String tokenUsado = (customToken != null && !customToken.isBlank()) ? customToken.trim() : this.botToken;
-        String chatIdUsado = (customChatId != null && !customChatId.isBlank()) ? customChatId.trim() : this.chatId;
+        String tokenUsado = sanitizarToken((customToken != null && !customToken.isBlank()) ? customToken : this.botToken);
+        String chatIdUsado = (customChatId != null && !customChatId.isBlank()) ? customChatId.trim().replaceAll("^[\"']+|[\"']+$", "") : this.chatId;
 
         if (tokenUsado == null || tokenUsado.isBlank() || chatIdUsado == null || chatIdUsado.isBlank()) {
             return new RespostaDTO(false,
@@ -115,6 +115,18 @@ public class TelegramService {
                 return new RespostaDTO(false, "Telegram retornou status " + response.getStatusCode());
             }
         } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("[Telegram] Token nao autorizado (401). Verifique o Token configurado no @BotFather.");
+                return new RespostaDTO(false,
+                        "Token do Bot não autorizado (401 Unauthorized). Verifique se o Token HTTP copiado do @BotFather está correto e ativo.");
+            }
+
+            String responseBody = e.getResponseBodyAsString();
+            if (e.getStatusCode().value() == 400 && responseBody != null && responseBody.contains("chat not found")) {
+                return new RespostaDTO(false,
+                        "Chat ID não encontrado no Telegram. Abra a conversa com seu bot e clique em 'Começar / Start', depois confira seu Chat ID no @userinfobot.");
+            }
+
             log.warn("[Telegram] Falha no envio formatado em HTML (status {}): {}. Tentando fallback em texto puro...",
                     e.getStatusCode(), e.getResponseBodyAsString());
 
@@ -151,6 +163,26 @@ public class TelegramService {
             log.error("[Telegram] Erro ao enviar mensagem: {}", e.getMessage());
             return new RespostaDTO(false, "Falha ao enviar para o Telegram: " + e.getMessage());
         }
+    }
+
+    /** Sanitiza o token do bot removendo aspas, prefixos como 'bot' ou endpoints acidentais. */
+    public static String sanitizarToken(String token) {
+        if (token == null) return null;
+        String limpo = token.trim();
+        limpo = limpo.replaceAll("^[\"']+|[\"']+$", "");
+        if (limpo.contains("/bot")) {
+            limpo = limpo.substring(limpo.indexOf("/bot") + 4);
+        }
+        if (limpo.endsWith("/sendMessage")) {
+            limpo = limpo.substring(0, limpo.indexOf("/sendMessage"));
+        }
+        if (limpo.endsWith("/")) {
+            limpo = limpo.substring(0, limpo.length() - 1);
+        }
+        if (limpo.toLowerCase().startsWith("bot") && limpo.contains(":")) {
+            limpo = limpo.substring(3);
+        }
+        return limpo.trim();
     }
 
     /** Escapa caracteres especiais para HTML no Telegram. */

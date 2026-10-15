@@ -541,9 +541,12 @@ async function enviarVagaAoTelegram(vaga) {
         } else if (resp.status === 429) {
             mostrarToast(data.mensagem || 'Limite de envios atingido. Aguarde alguns minutos.', 'erro', 5000);
         } else {
-            mostrarToast(data.mensagem || 'Falha ao enviar para o Telegram.', 'erro', 5000);
-            if (!botToken || !chatId) {
-                abrirModalConfig();
+            const msg = data?.mensagem || 'Falha ao enviar para o Telegram.';
+            mostrarToast(msg, 'erro', 6000);
+            if (resp.status === 401 || msg.includes('401') || msg.includes('não autorizado') || msg.includes('Chat ID') || !botToken || !chatId) {
+                setTimeout(() => {
+                    abrirModalConfig();
+                }, 900);
             }
         }
     } catch (err) {
@@ -586,14 +589,35 @@ btnToggleToken.addEventListener('click', () => {
 
 formTelegramConfig.addEventListener('submit', (e) => {
     e.preventDefault();
-    const token = tgBotTokenInput.value.trim();
-    const chat = tgChatIdInput.value.trim();
+    let token = tgBotTokenInput.value.trim();
+    let chat = tgChatIdInput.value.trim();
 
-    if (token) localStorage.setItem('vagamonitor_tg_token', token);
-    else localStorage.removeItem('vagamonitor_tg_token');
+    if (token) {
+        token = token.replace(/^["']+|["']+$/g, '');
+        if (token.includes('/bot')) {
+            token = token.substring(token.indexOf('/bot') + 4);
+        }
+        if (token.endsWith('/sendMessage')) {
+            token = token.substring(0, token.indexOf('/sendMessage'));
+        }
+        if (token.endsWith('/')) {
+            token = token.substring(0, token.length - 1);
+        }
+        if (/^bot\d+:/i.test(token)) {
+            token = token.substring(3);
+        }
+        token = token.trim();
+        localStorage.setItem('vagamonitor_tg_token', token);
+    } else {
+        localStorage.removeItem('vagamonitor_tg_token');
+    }
 
-    if (chat) localStorage.setItem('vagamonitor_tg_chat_id', chat);
-    else localStorage.removeItem('vagamonitor_tg_chat_id');
+    if (chat) {
+        chat = chat.replace(/^["']+|["']+$/g, '').trim();
+        localStorage.setItem('vagamonitor_tg_chat_id', chat);
+    } else {
+        localStorage.removeItem('vagamonitor_tg_chat_id');
+    }
 
     atualizarIndicadorTelegram();
     fecharModalConfig();
