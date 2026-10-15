@@ -21,8 +21,9 @@ application-local.properties
 # === Banco de dados local ===
 data/
 
-# === Documentos acadêmicos (ficam no OneDrive, não vão para o repo) ===
+# === Documentação, Ativos e Identidade Visual (arquivos locais / OneDrive) ===
 docs/
+/docs/
 
 # === Sistema ===
 .DS_Store

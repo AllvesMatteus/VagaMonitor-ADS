@@ -16,6 +16,10 @@ public class BuscaDTO {
 
     private String modelo;
 
+    private Integer pagina;
+
+    private Integer limite;
+
     public String getPalavraChave() { return palavraChave; }
     public void setPalavraChave(String palavraChave) { this.palavraChave = palavraChave; }
     public String getLocalizacao() { return localizacao; }
@@ -24,5 +28,9 @@ public class BuscaDTO {
     public void setTipo(String tipo) { this.tipo = tipo; }
     public String getModelo() { return modelo; }
     public void setModelo(String modelo) { this.modelo = modelo; }
+    public Integer getPagina() { return pagina != null && pagina > 0 ? pagina : 1; }
+    public void setPagina(Integer pagina) { this.pagina = pagina; }
+    public Integer getLimite() { return limite != null && limite > 0 ? limite : 10; }
+    public void setLimite(Integer limite) { this.limite = limite; }
 }
 

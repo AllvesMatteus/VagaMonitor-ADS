@@ -36,13 +36,17 @@ public class VagaController {
     @PostMapping("/buscar")
     public ResponseEntity<?> buscar(@Valid @RequestBody BuscaDTO busca) {
         try {
-            List<VagaDTO> vagas = vagaService.buscarEPersistir(
-                    busca.getPalavraChave(), busca.getLocalizacao(), busca.getTipo(), busca.getModelo());
-            if (vagas.isEmpty()) {
-                return ResponseEntity.ok(new RespostaListagem(vagas,
-                        "Nenhuma vaga encontrada para estes critérios."));
+            int pagina = busca.getPagina();
+            int limite = busca.getLimite();
+            com.vagamonitor.dto.ResultadoBuscaDTO resultado = vagaService.buscarEPersistirPaginado(
+                    busca.getPalavraChave(), busca.getLocalizacao(), busca.getTipo(), busca.getModelo(), pagina, limite);
+            if (resultado.getVagas().isEmpty()) {
+                return ResponseEntity.ok(new RespostaListagem(resultado.getVagas(),
+                        "Nenhuma vaga encontrada para estes critérios.",
+                        resultado.getTotal(), resultado.getPagina(), resultado.getTotalPaginas(), resultado.getLimite()));
             }
-            return ResponseEntity.ok(new RespostaListagem(vagas, null));
+            return ResponseEntity.ok(new RespostaListagem(resultado.getVagas(), null,
+                    resultado.getTotal(), resultado.getPagina(), resultado.getTotalPaginas(), resultado.getLimite()));
         } catch (FonteIndisponivelException e) {
             log.error("[VagaController] Fonte indisponivel: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -111,12 +115,29 @@ public class VagaController {
     public static class RespostaListagem {
         private List<VagaDTO> vagas;
         private String aviso;
+        private int total;
+        private int pagina;
+        private int totalPaginas;
+        private int limite;
 
         public RespostaListagem(List<VagaDTO> vagas, String aviso) {
+            this(vagas, aviso, vagas != null ? vagas.size() : 0, 1, 1, 10);
+        }
+
+        public RespostaListagem(List<VagaDTO> vagas, String aviso, int total, int pagina, int totalPaginas, int limite) {
             this.vagas = vagas;
             this.aviso = aviso;
+            this.total = total;
+            this.pagina = pagina;
+            this.totalPaginas = totalPaginas;
+            this.limite = limite;
         }
+
         public List<VagaDTO> getVagas() { return vagas; }
         public String getAviso() { return aviso; }
+        public int getTotal() { return total; }
+        public int getPagina() { return pagina; }
+        public int getTotalPaginas() { return totalPaginas; }
+        public int getLimite() { return limite; }
     }
 }

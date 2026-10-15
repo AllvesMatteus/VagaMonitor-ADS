@@ -1,7 +1,9 @@
 package com.vagamonitor.service;
 
+import com.vagamonitor.dto.ResultadoBuscaDTO;
 import com.vagamonitor.dto.VagaDTO;
 import com.vagamonitor.integration.GupyClient;
+import com.vagamonitor.integration.ResultadoGupy;
 import com.vagamonitor.model.CriterioBusca;
 import com.vagamonitor.model.Vaga;
 import com.vagamonitor.repository.CriterioBuscaRepository;
@@ -33,11 +35,15 @@ public class VagaService {
     }
 
     /**
-     * Busca vagas sob demanda no portal Gupy, persiste o critério e as vagas novas, e retorna os DTOs.
+     * Busca vagas sob demanda no portal Gupy de forma paginada (10 em 10), persiste o critério e as vagas novas.
      */
     @Transactional
-    public List<VagaDTO> buscarEPersistir(String palavraChave, String localizacao, String tipo, String modelo) {
-        List<VagaDTO> vagasExternas = gupyClient.buscar(palavraChave, localizacao, tipo, modelo);
+    public ResultadoBuscaDTO buscarEPersistirPaginado(String palavraChave, String localizacao, String tipo, String modelo, int pagina, int limite) {
+        int effPagina = Math.max(1, pagina);
+        int effLimite = Math.max(1, limite);
+        int offset = (effPagina - 1) * effLimite;
+
+        ResultadoGupy resultadoGupy = gupyClient.buscarPaginado(palavraChave, localizacao, tipo, modelo, effLimite, offset);
 
         // Persiste o critério de busca
         CriterioBusca criterio = new CriterioBusca();
@@ -56,15 +62,29 @@ public class VagaService {
             locFiltro.append("Tipo: ").append(tipo);
         }
         criterio.setLocalizacao(!locFiltro.isEmpty() ? locFiltro.toString() : null);
-        criterio.setTotalResultados(vagasExternas.size());
+        criterio.setTotalResultados(resultadoGupy.getTotal());
         criterioRepository.save(criterio);
 
         // Persiste apenas vagas novas (deduplicação por idExterno = URL)
-        List<Vaga> vagasSalvas = vagasExternas.stream()
+        List<Vaga> vagasSalvas = resultadoGupy.getVagas().stream()
                 .map(dto -> persistirSeDuplicada(dto, palavraChave))
                 .collect(Collectors.toList());
 
-        return vagasSalvas.stream().map(this::toDTO).collect(Collectors.toList());
+        List<VagaDTO> dtos = vagasSalvas.stream().map(this::toDTO).collect(Collectors.toList());
+
+        int total = resultadoGupy.getTotal();
+        int totalPaginas = (int) Math.ceil((double) total / effLimite);
+        if (totalPaginas < 1) totalPaginas = 1;
+
+        return new ResultadoBuscaDTO(dtos, total, effPagina, totalPaginas, effLimite);
+    }
+
+    /**
+     * Busca vagas sob demanda no portal Gupy, persiste o critério e as vagas novas, e retorna os DTOs.
+     */
+    @Transactional
+    public List<VagaDTO> buscarEPersistir(String palavraChave, String localizacao, String tipo, String modelo) {
+        return buscarEPersistirPaginado(palavraChave, localizacao, tipo, modelo, 1, 20).getVagas();
     }
 
     @Transactional
