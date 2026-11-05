@@ -238,6 +238,7 @@ http://localhost:8080
 | `mvn spring-boot:run` | Inicia o servidor local do Spring Boot na porta 8080 |
 | `mvn test` | Executa todos os 12 testes unitários e de integração |
 | `mvn clean package` | Compila o projeto e gera o arquivo `.jar` executável em `target/` |
+| `mvn clean test` | Limpa compilações anteriores e executa a suíte completa de testes |
 | `mvn flyway:info` | Exibe o status e histórico das migrações do banco de dados |
 
 ---
