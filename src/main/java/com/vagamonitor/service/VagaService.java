@@ -92,6 +92,11 @@ public class VagaService {
         return buscarEPersistir(palavraChave, localizacao, null, null);
     }
 
+    /**
+     * Persiste uma vaga caso ela ainda nao exista na base de dados local.
+     * Utiliza a URL original como identificador estavel de deduplicacao
+     * para garantir a idempotencia das consultas recorrentes.
+     */
     private Vaga persistirSeDuplicada(VagaDTO dto, String palavraChave) {
         String idExterno = dto.getUrlOriginal(); // URL como identificador estável
         Optional<Vaga> existente = vagaRepository.findByIdExterno(idExterno);
