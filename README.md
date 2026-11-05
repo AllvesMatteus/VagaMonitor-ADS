@@ -170,19 +170,46 @@ VagaMonitor-ADS/
 ## 🚀 Como Executar o Projeto Localmente
 
 ### Pré-requisitos
-- [Java 21 LTS](https://learn.microsoft.com/pt-br/java/openjdk/download) instalado e configurado no `PATH`.
-- [Apache Maven 3.9+](https://maven.apache.org/) (ou utilize o wrapper `./mvnw` incluso).
+- [Java 21 LTS](https://learn.microsoft.com/pt-br/java/openjdk/download) (Eclipse Temurin, OpenJDK ou Oracle JDK 21) instalado e configurado nas variáveis de ambiente `JAVA_HOME` e `PATH` (verifique com `java -version`).
+- [Apache Maven 3.9+](https://maven.apache.org/) instalado e configurado no `PATH` do sistema (verifique com `mvn -version`). O repositório não inclui o wrapper `mvnw`.
+- Conexão ativa com a internet (necessária para que a aplicação consulte a API pública do Portal Gupy).
 
-### 1. Clonar o Repositório
+### 1. Obter o Código da Entrega
+Como a branch padrão no GitHub é a `main`, o clone padrão posiciona o repositório nela. Para acessar a versão desta entrega, selecione a branch `master` ou a tag `v2` (após sua publicação):
+
 ```bash
 git clone https://github.com/AllvesMatteus/VagaMonitor-ADS.git
 cd VagaMonitor-ADS
+
+# Selecionar a branch master da entrega:
+git checkout master
+
+# Ou selecionar diretamente a tag v2 da entrega:
+git checkout v2
 ```
 
-### 2. Executar a Aplicação
-Execute o Maven com o perfil de desenvolvimento ativo:
+### 2. Configuração de Banco de Dados e Variáveis de Ambiente
+- **Execução local padrão:** Não exige definir variáveis de ambiente no sistema operacional, desde que não existam variáveis de produção (como `DB_URL` ou `DATABASE_URL`) exportadas no terminal que substituam as configurações locais.
+- **Banco H2 em arquivo:** A aplicação utiliza o H2 Database embutido gravado na pasta `./data/` (`./data/vagamonitor` no perfil padrão e `./data/vagamonitor-dev` no perfil dev). Os dados persistem entre reinicializações sem necessidade de instalar um servidor de banco de dados externo.
+- **Migrações com Flyway:** O esquema, tabelas e índices são criados automaticamente na inicialização (`src/main/resources/db/migration/V1__init.sql`).
+- **Diferença sobre arquivo .env:** O Spring Boot lê configurações de propriedades da JVM (`-D`) ou variáveis de ambiente do sistema operacional. O projeto não inclui biblioteca para carregamento automático de arquivos `.env`. O arquivo `.env.example` serve apenas como documentação de referência para variáveis aceitas em deploy de nuvem (Render/PostgreSQL).
+
+### 3. Executar a Aplicação
+
+#### Opção A: Perfil Padrão
+Neste modo, o banco local utiliza o arquivo `./data/vagamonitor`. O console web do H2 permanece desabilitado por segurança.
 
 ```bash
+mvn spring-boot:run
+```
+
+#### Opção B: Perfil de Desenvolvimento (dev)
+Ativa logs em nível `DEBUG` para classes de negócio, exibição das consultas SQL no terminal e habilita o Console Web do H2.
+
+```bash
+# Qualquer sistema operacional (parâmetro Maven com aspas)
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+
 # Windows (PowerShell)
 $env:SPRING_PROFILES_ACTIVE="dev"
 mvn spring-boot:run
@@ -192,42 +219,68 @@ set SPRING_PROFILES_ACTIVE=dev
 mvn spring-boot:run
 
 # Linux / macOS (Bash)
-SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
 ```
 
-### 3. Acessar no Navegador
-Abra o navegador e acesse:
-```
-http://localhost:8080
-```
+### 4. Acessar no Navegador
+- **Aplicação Web:** Acesse `http://localhost:8080`
+- **Console do Banco H2 (disponível exclusivamente no perfil dev):**
+  - URL de acesso: `http://localhost:8080/h2-console`
+  - JDBC URL: `jdbc:h2:file:./data/vagamonitor-dev`
+  - Usuário: `sa`
+  - Senha: (deixar em branco)
 
-> **Console do Banco H2:** Para inspecionar as tabelas locais criadas pelo Flyway, acesse `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:file:./data/vagamonitor`, Usuário: `sa`, Senha em branco).
+### 5. Executar Testes e Gerar o Pacote Executável
+- **Executar a suíte de testes (12 testes unitários e de integração):**
+```bash
+mvn test
+
+# Para limpeza prévia e execução completa:
+mvn clean test
+```
+- **Gerar o arquivo JAR executável:**
+```bash
+mvn clean package
+```
+  O artefato é gerado em `target/vagamonitor-0.1.0-SNAPSHOT.jar`.
+- **Executar a aplicação via JAR:**
+```bash
+java -jar target/vagamonitor-0.1.0-SNAPSHOT.jar
+```
 
 ---
 
 ## 📖 Como Utilizar o Sistema
 
-### Passo 1: Configurar o Telegram (Leva menos de 2 minutos)
-1. Ao abrir o site pela primeira vez, o modal de configuração aparecerá na tela.
-2. No Telegram, abra a conversa com o bot oficial **[@BotFather](https://t.me/BotFather)**.
-3. Envie o comando `/newbot`, escolha um nome e um username para o seu bot.
-4. O BotFather fornecerá um **Token de Acesso HTTP** (ex: `123456789:ABCdefGhIJKlmNoPQRstuVWXyz`). Copie e cole no primeiro campo do modal.
-5. Inicie seu bot recém-criado clicando em **Começar / Start**.
-6. Para descobrir seu Chat ID numérico, mande uma mensagem para o bot **[@userinfobot](https://t.me/userinfobot)**. Copie seu ID (ex: `987654321`) e cole no segundo campo.
-7. Clique em **Salvar e Conectar**. Pronto! *(Se quiser, você também pode clicar em "Configurar Depois" e fazer isso em outro momento).*
+### Uso Sem Telegram (Consulta e Filtros Livres)
+A configuração do Telegram não é obrigatória para usar a aplicação. Sem o bot configurado, você pode:
+- Buscar vagas em tempo real via API pública da Gupy (requer internet).
+- Filtrar por Modelo de Trabalho (Remoto, Híbrido, Presencial).
+- Filtrar por Tipo de Contratação (Estágio, Efetivo, Jovem Aprendiz, Temporário).
+- Navegar pela paginação em lotes de 10 vagas.
+- Abrir os detalhes da vaga para inspecionar requisitos e acessar o link oficial de candidatura no Portal Gupy.
 
-### Passo 2: Buscar Vagas
-1. No campo de busca, digite o cargo ou tecnologia desejada (ex: `Java`, `Estágio`, `Python`, `Administrativo`).
-2. Opcionalmente, informe uma localização (ex: `São Paulo`, `Remoto`).
-3. Ou simplesmente clique em qualquer especialidade do **Hub de Carreiras** na tela inicial.
-4. Refine sua busca com os filtros rápidos lado a lado de **Modelo** (Remoto / Híbrido / Presencial) e **Contratação** (Estágio / Efetivo / Jovem Aprendiz / Temporário).
-5. Clique em **Buscar Vagas**.
-6. Navegue facilmente pelos lotes de 10 vagas através da barra de paginação numérica (1, 2, 3, 4...).
+Ao abrir o site pela primeira vez, basta clicar em **Configurar Depois** no modal para navegar livremente.
 
-### Passo 3: Consultar Detalhes e Enviar ao Telegram
-1. Clique em **Ver detalhes** no card da vaga para inspecionar os requisitos completos.
-2. Clique no botão azul do **Telegram** no card ou no modal: a oportunidade será enviada imediatamente para o seu chat!
-3. Clique em **Ver no Portal Gupy** para acessar diretamente o link oficial de inscrição da empresa.
+### Uso Com Telegram (Envio com 1 Clique)
+Permite encaminhar o resumo da oportunidade selecionada diretamente para um chat do Telegram.
+
+1. **Criar o Bot:** Abra a conversa com o **[@BotFather](https://t.me/BotFather)** no Telegram, envie `/newbot`, escolha nome e usuário, e copie o Token de Acesso HTTP fornecido.
+2. **Iniciar o Bot (Obrigatório):** Abra a conversa com o seu bot recém-criado no Telegram e clique em **Começar** (ou **Start**). Esse passo é indispensável para que o Telegram autorize o envio de mensagens.
+3. **Descobrir o Chat ID:** Envie qualquer mensagem para o bot **[@userinfobot](https://t.me/userinfobot)** e copie o seu ID numérico.
+4. **Configurar na Interface (Armazenamento e Transmissão):**
+   - No modal de configuração da aplicação, insira o Token e o Chat ID e clique em **Salvar e Conectar**.
+   - Os valores são gravados no navegador via `localStorage` (em texto simples) para conveniência de preenchimento.
+   - Ao clicar no botão de envio de uma vaga, o navegador transmite essas credenciais no corpo da requisição HTTP POST para o endpoint `/api/vagas/{id}/telegram`. O servidor utiliza as credenciais em memória para disparar a mensagem via Telegram Bot API e não armazena essas chaves no banco de dados.
+5. **Configuração Alternativa via Servidor:**
+   - Também é possível definir as variáveis de ambiente `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` no ambiente onde o servidor é executado.
+
+### Passo a Passo de Consulta
+1. Digite a palavra-chave no campo de busca ou clique em um atalho do Hub de Carreiras.
+2. Refine a pesquisa com os filtros rápidos de Modelo e Contratação.
+3. Clique em **Buscar Vagas** e navegue pelas páginas numéricas de resultados.
+4. Clique em **Ver detalhes** no card para ler as informações completas.
+5. Se o Telegram estiver configurado, clique no botão azul do **Telegram** para despachar a vaga; ou clique em **Ver no Portal Gupy** para se candidatar.
 
 ---
 
@@ -235,10 +288,12 @@ http://localhost:8080
 
 | Comando | Descrição |
 |---|---|
-| `mvn spring-boot:run` | Inicia o servidor local do Spring Boot na porta 8080 |
-| `mvn test` | Executa todos os 12 testes unitários e de integração |
-| `mvn clean package` | Compila o projeto e gera o arquivo `.jar` executável em `target/` |
-| `mvn clean test` | Limpa compilações anteriores e executa a suíte completa de testes |
+| `mvn spring-boot:run` | Inicia a aplicação no perfil padrão (porta 8080) |
+| `mvn spring-boot:run "-Dspring-boot.run.profiles=dev"` | Inicia no perfil dev com logs DEBUG e console H2 |
+| `mvn test` | Executa os 12 testes unitários e de integração |
+| `mvn clean test` | Limpa compilações anteriores e executa os testes do zero |
+| `mvn clean package` | Compila, testa e gera o arquivo target/vagamonitor-0.1.0-SNAPSHOT.jar |
+| `java -jar target/vagamonitor-0.1.0-SNAPSHOT.jar` | Executa diretamente o artefato empacotado da aplicação |
 | `mvn flyway:info` | Exibe o status e histórico das migrações do banco de dados |
 
 ---
